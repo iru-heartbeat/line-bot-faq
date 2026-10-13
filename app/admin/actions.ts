@@ -46,7 +46,7 @@ export async function createFaqAction(formData: FormData): Promise<void> {
   }
 
   await createFaq(question, answer);
-  revalidatePath("/admin");
+  revalidatePath("/admin/faq");
 }
 
 export async function updateFaqAction(formData: FormData): Promise<void> {
@@ -60,7 +60,7 @@ export async function updateFaqAction(formData: FormData): Promise<void> {
   }
 
   await updateFaq(id, question, answer);
-  revalidatePath("/admin");
+  revalidatePath("/admin/faq");
 }
 
 export async function deleteFaqAction(formData: FormData): Promise<void> {
@@ -72,7 +72,7 @@ export async function deleteFaqAction(formData: FormData): Promise<void> {
   }
 
   await deleteFaq(id);
-  revalidatePath("/admin");
+  revalidatePath("/admin/faq");
 }
 
 function parsePrice(raw: FormDataEntryValue | null): number {
@@ -93,7 +93,7 @@ export async function createMenuAction(formData: FormData): Promise<void> {
   }
 
   await createMenuItem(name, price);
-  revalidatePath("/admin");
+  revalidatePath("/admin/menu");
 }
 
 export async function updateMenuAction(formData: FormData): Promise<void> {
@@ -107,7 +107,7 @@ export async function updateMenuAction(formData: FormData): Promise<void> {
   }
 
   await updateMenuItem(id, name, price);
-  revalidatePath("/admin");
+  revalidatePath("/admin/menu");
 }
 
 export async function deleteMenuAction(formData: FormData): Promise<void> {
@@ -119,7 +119,7 @@ export async function deleteMenuAction(formData: FormData): Promise<void> {
   }
 
   await deleteMenuItem(id);
-  revalidatePath("/admin");
+  revalidatePath("/admin/menu");
 }
 
 export async function sendBroadcastAction(formData: FormData): Promise<void> {
@@ -127,16 +127,16 @@ export async function sendBroadcastAction(formData: FormData): Promise<void> {
 
   const message = String(formData.get("message") ?? "").trim();
   if (!message) {
-    redirect("/admin?broadcast=empty");
+    redirect("/admin/broadcast?broadcast=empty");
   }
 
   try {
     await sendBroadcast(message);
   } catch (error) {
     console.error("一斉配信の送信に失敗しました", error);
-    redirect("/admin?broadcast=error");
+    redirect("/admin/broadcast?broadcast=error");
   }
 
-  revalidatePath("/admin");
-  redirect("/admin?broadcast=sent");
+  revalidatePath("/admin/broadcast");
+  redirect("/admin/broadcast?broadcast=sent");
 }
