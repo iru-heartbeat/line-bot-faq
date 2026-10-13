@@ -9,6 +9,7 @@ import {
   getIsAuthenticated,
 } from "@/lib/adminAuth";
 import { createFaq, updateFaq, deleteFaq } from "@/lib/faq";
+import { createMenuItem, updateMenuItem, deleteMenuItem } from "@/lib/menu";
 import { sendBroadcast } from "@/lib/broadcast";
 
 export async function loginAction(formData: FormData): Promise<void> {
@@ -71,6 +72,53 @@ export async function deleteFaqAction(formData: FormData): Promise<void> {
   }
 
   await deleteFaq(id);
+  revalidatePath("/admin");
+}
+
+function parsePrice(raw: FormDataEntryValue | null): number {
+  const price = Number(raw);
+  if (!Number.isInteger(price) || price < 0) {
+    throw new Error("金額には0以上の整数を入力してください");
+  }
+  return price;
+}
+
+export async function createMenuAction(formData: FormData): Promise<void> {
+  await requireAuthenticated();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const price = parsePrice(formData.get("price"));
+  if (!name) {
+    throw new Error("メニュー名を入力してください");
+  }
+
+  await createMenuItem(name, price);
+  revalidatePath("/admin");
+}
+
+export async function updateMenuAction(formData: FormData): Promise<void> {
+  await requireAuthenticated();
+
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const price = parsePrice(formData.get("price"));
+  if (!id || !name) {
+    throw new Error("メニュー名を入力してください");
+  }
+
+  await updateMenuItem(id, name, price);
+  revalidatePath("/admin");
+}
+
+export async function deleteMenuAction(formData: FormData): Promise<void> {
+  await requireAuthenticated();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) {
+    throw new Error("削除対象のIDが指定されていません");
+  }
+
+  await deleteMenuItem(id);
   revalidatePath("/admin");
 }
 

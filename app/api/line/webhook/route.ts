@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { validateSignature, webhook } from "@line/bot-sdk";
 import { getFaqList } from "@/lib/faq";
+import { getMenuList } from "@/lib/menu";
 import { answerFromFaq } from "@/lib/claude";
 import { getLineClient } from "@/lib/line";
 import { escalateInquiry } from "@/lib/escalation";
@@ -49,8 +50,8 @@ async function handleEvent(event: webhook.Event): Promise<void> {
 
   let replyText: string;
   try {
-    const faqList = await getFaqList();
-    const result = await answerFromFaq(message.text, faqList);
+    const [faqList, menuList] = await Promise.all([getFaqList(), getMenuList()]);
+    const result = await answerFromFaq(message.text, faqList, menuList);
 
     if (result.answerable) {
       replyText = result.answer;

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { FaqItem } from "./faq";
+import type { MenuItem } from "./menu";
 
 export type FaqConfidence = "高" | "中" | "低";
 
@@ -21,17 +22,25 @@ export type FaqAnswerResult =
 // (Vercelの処理時間制約への対応、かつ判定根拠を毎回明示させることで過信した回答を防ぐ)。
 export async function answerFromFaq(
   userMessage: string,
-  faqList: FaqItem[]
+  faqList: FaqItem[],
+  menuList: MenuItem[]
 ): Promise<FaqAnswerResult> {
   const faqText = faqList
     .map((item, i) => `${i + 1}. Q: ${item.question}\n   A: ${item.answer}`)
     .join("\n");
 
+  const menuText = menuList
+    .map((item) => `- ${item.name}: ${item.price.toLocaleString("ja-JP")}円(税込)`)
+    .join("\n");
+
   const systemPrompt = `あなたは店舗のLINE公式アカウントのFAQ自動応答botです。
-以下のFAQリストの内容「のみ」を根拠にユーザーの質問に答えてください。
+以下のFAQリストとメニュー表の内容「のみ」を根拠にユーザーの質問に答えてください。
 
 # FAQリスト
 ${faqText}
+
+# メニュー表(施術名・料金)
+${menuText}
 
 # 出力形式
 1行目に確信度ラベル「高」「中」「低」のいずれか1語のみ、2行目以降に回答本文を書いてください。
@@ -39,14 +48,14 @@ ${faqText}
 
 # 挨拶・雑談について
 「こんにちは」「ありがとう」「お疲れ様です」のような、情報を求めていない挨拶・雑談には、
-FAQの内容を使わず、親切で自然な一言で返信してください(確信度は「高」としてください)。
+FAQ・メニュー表の内容を使わず、親切で自然な一言で返信してください(確信度は「高」としてください)。
 
 # 確信度の基準
-- 高: FAQリストの記載内容そのもので直接答えられる、または上記の挨拶・雑談にあたる。
-- 中: FAQリストの内容の言い換えや組み合わせで答えられるが、FAQに一字一句そのままの記載はない。
-- 低: FAQリストに直接の記載がない情報が必要、個人情報の確認、クレーム対応など、FAQの範囲を超える質問。
+- 高: FAQリスト・メニュー表の記載内容そのもので直接答えられる、または上記の挨拶・雑談にあたる。
+- 中: FAQリスト・メニュー表の内容の言い換えや組み合わせで答えられるが、一字一句そのままの記載はない。
+- 低: FAQリスト・メニュー表に直接の記載がない情報が必要、個人情報の確認、クレーム対応など、範囲を超える質問。
   この場合は1行目に「低」とだけ書き、2行目以降は何も書かないでください(回答文を書かない)。
-- 高・中の場合も、FAQリストにない情報を推測で補わないでください。`;
+- 高・中の場合も、FAQリスト・メニュー表にない情報を推測で補わないでください。`;
 
   const response = await getClient().messages.create({
     model: "claude-haiku-5-5",

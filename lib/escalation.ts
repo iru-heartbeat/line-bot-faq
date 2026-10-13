@@ -4,6 +4,14 @@ import { getLineClient } from "./line";
 // "unanswerable": ClaudeがFAQで回答不可と判定した / "error": Supabase・Claude呼び出し自体が失敗した
 export type EscalationReason = "unanswerable" | "error";
 
+export type InquiryLogItem = {
+  id: string;
+  question: string;
+  lineUserId: string | null;
+  reason: EscalationReason;
+  createdAt: string;
+};
+
 // 質問を (1) Supabaseにログ記録 (2) オーナー様へLINE通知 する。
 // どちらかが失敗しても、ユーザーへの返信処理自体は止めたくないため、ここでは例外を投げずログのみ残す。
 export async function escalateInquiry(
@@ -54,4 +62,29 @@ async function notifyOwner(question: string, reason: EscalationReason): Promise<
   } catch (error) {
     console.error("オーナー様への通知送信に失敗しました", error);
   }
+}
+
+export async function getInquiryLogsForAdmin(): Promise<InquiryLogItem[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("inquiry_logs")
+    .select("id, question, line_user_id, reason, created_at")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    throw new Error(`問い合わせ履歴の取得に失敗しました: ${error.message}`);
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    question: row.question,
+    lineUserId: row.line_user_id,
+    reason: row.reason,
+    createdAt: row.created_at,
+  }));
 }
